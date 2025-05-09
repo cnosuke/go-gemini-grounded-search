@@ -6,14 +6,14 @@ information from the web, along with their cited sources.
 
 Basic Usage:
 
+	ctx := context.Background()
 	apiKey := os.Getenv("GEMINI_API_KEY")
-	client, err := search.NewClient(apiKey)
+	client, err := search.NewClient(ctx, apiKey)
 	if err != nil {
 	  log.Fatal(err)
 	}
 	defer client.Close()
 
-	ctx := context.Background()
 	response, err := client.GenerateGroundedContent(ctx, "What are the recent developments in quantum computing?")
 	if err != nil {
 	  log.Fatal(err)
@@ -31,11 +31,10 @@ package search
 import (
 	"context"
 	"fmt"
-	"strings" // Added for strings.Builder
+	"strings"
 
-	// "google.golang.org/api/option" // REMOVED: No longer using this for ClientOptions
-
-	"google.golang.org/genai" // This is the new SDK client package
+	"github.com/cockroachdb/errors"
+	"google.golang.org/genai"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -45,7 +44,7 @@ import (
 type Client struct {
 	config                  ClientConfig                 // Resolved configuration after applying options
 	genaiClient             *genai.Client                // Underlying client from the official Google AI Go SDK
-	defaultModel            string                       // Default model name (e.g., "gemini-2.5-flash")
+	defaultModel            string                       // Default model name (e.g., "gemini-2.0-flash")
 	defaultGenContentConfig *genai.GenerateContentConfig // Default generation configuration
 	userAgent               string                       // Combined user-agent string
 }
@@ -54,20 +53,19 @@ type Client struct {
 // apiKey is your Google AI API key.
 // opts are functional options to customize the client's behavior.
 func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Client, error) {
-	cfg, err := newDefaultClientConfig(apiKey) // Assuming this function initializes ClientConfig
+	cfg, err := newDefaultClientConfig(apiKey)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := applyClientOptions(cfg, opts...); err != nil { // Assuming this function applies custom options
+	if err := applyClientOptions(cfg, opts...); err != nil {
 		return nil, err
 	}
 
-	if err := cfg.validate(); err != nil { // Assuming this validates ClientConfig
+	if err := cfg.validate(); err != nil {
 		return nil, err
 	}
 
-	// Use ClientOptions from the google.golang.org/genai package directly
 	sdkConfig := &genai.ClientConfig{
 		APIKey: cfg.APIKey,
 	}
@@ -76,10 +74,10 @@ func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Clien
 		sdkConfig.HTTPClient = cfg.HTTPClient
 	}
 
-	gClient, err := genai.NewClient(ctx, sdkConfig) // Assuming this is the correct way to create a new genai client
+	gClient, err := genai.NewClient(ctx, sdkConfig)
 	if err != nil {
 		if s, ok := status.FromError(err); ok {
-			return nil, newAPIError(s.Code(), s.Message(), err, s.Details()...) // Assuming newAPIError is defined
+			return nil, newAPIError(s.Code(), s.Message(), err, s.Details()...)
 		}
 		return nil, newAPIError(codes.Internal, "failed to create genai client", err)
 	}
@@ -102,18 +100,20 @@ func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Clien
 	if cfg.DefaultSafetySettings != nil && len(cfg.DefaultSafetySettings) > 0 {
 		sdkSafetySettings := make([]*genai.SafetySetting, len(cfg.DefaultSafetySettings))
 		for i, s := range cfg.DefaultSafetySettings {
-			// Based on user-provided SDK's types.go, HarmCategory and HarmBlockThreshold are string types.
 			sdkSafetySettings[i] = &genai.SafetySetting{
-				Category:  genai.HarmCategory(s.Category),        // Assumes s.Category (app type) is string
-				Threshold: genai.HarmBlockThreshold(s.Threshold), // Assumes s.Threshold (app type) is string
+				Category:  genai.HarmCategory(s.Category),
+				Threshold: genai.HarmBlockThreshold(s.Threshold),
 			}
 		}
 		gConf.SafetySettings = sdkSafetySettings
 	}
+
 	if cfg.DisableGoogleSearchToolGlobally {
 		gConf.Tools = nil
 	} else {
-		gConf.Tools = []*genai.Tool{newGoogleSearchRetrieverTool()} // Use from grounding.go
+		gConf.Tools = []*genai.Tool{
+			newGoogleSearchRetrieverTool(),
+		}
 	}
 
 	client := &Client{
@@ -131,7 +131,7 @@ func (c *Client) processGenaiResponse(genaiResp *genai.GenerateContentResponse, 
 		s, ok := status.FromError(callErr)
 		if ok {
 			if s.Code() == codes.InvalidArgument && containsSafetyBlockDetails(s.Details()) {
-				return nil, newAPIError(s.Code(), s.Message(), ErrContentBlocked, s.Details()...) // Assuming ErrContentBlocked defined
+				return nil, newAPIError(s.Code(), s.Message(), ErrContentBlocked, s.Details()...)
 			}
 			return nil, newAPIError(s.Code(), s.Message(), callErr, s.Details()...)
 		}
@@ -139,57 +139,52 @@ func (c *Client) processGenaiResponse(genaiResp *genai.GenerateContentResponse, 
 	}
 
 	if genaiResp == nil {
-		return nil, newAPIError(codes.Internal, "received nil response from API without explicit error", ErrNoContentGenerated) // Assuming ErrNoContentGenerated
+		return nil, newAPIError(codes.Internal, "received nil response from API without explicit error", ErrNoContentGenerated)
 	}
 
 	// Based on user-provided SDK's types.go, PromptFeedback.BlockReason is a string.
 	if genaiResp.PromptFeedback != nil && genaiResp.PromptFeedback.BlockReason != genai.BlockedReasonUnspecified { // genai.BlockedReasonUnspecified is a string const from SDK
 		return nil, newAPIError(codes.InvalidArgument,
 			fmt.Sprintf("prompt blocked due to %s: %s", genaiResp.PromptFeedback.BlockReason, genaiResp.PromptFeedback.BlockReasonMessage),
-			ErrContentBlocked) // Assuming ErrContentBlocked
+			ErrContentBlocked)
 	}
 
 	if len(genaiResp.Candidates) == 0 {
-		return nil, ErrNoContentGenerated // Assuming ErrNoContentGenerated
+		return nil, ErrNoContentGenerated
 	}
 
 	candidate := genaiResp.Candidates[0]
 	// Based on user-provided SDK's types.go, FinishReason is a string.
-	if candidate.FinishReason == genai.FinishReasonSafety { // genai.FinishReasonSafety is a string const from SDK
+	if candidate.FinishReason == genai.FinishReasonSafety {
 		var safetyDetails string
 		if len(candidate.SafetyRatings) > 0 {
 			safetyDetails = fmt.Sprintf(" (Ratings: %v)", candidate.SafetyRatings)
 		}
 		return nil, newAPIError(codes.FailedPrecondition,
 			fmt.Sprintf("content generation stopped due to safety filters%s", safetyDetails),
-			ErrContentBlocked) // Assuming ErrContentBlocked
+			ErrContentBlocked)
 	}
 
 	if candidate.Content == nil || len(candidate.Content.Parts) == 0 {
-		return nil, ErrNoContentGenerated // Assuming ErrNoContentGenerated
+		return nil, ErrNoContentGenerated
 	}
 
 	var generatedTextBuilder strings.Builder
 	for _, part := range candidate.Content.Parts {
-		// New SDK's genai.Part struct has a 'Text string' field.
-		if part.Text != "" { // No need for type assertion like part.(genai.Text)
+		if part.Text != "" {
 			generatedTextBuilder.WriteString(part.Text)
 		}
 	}
 
-	var sdkCitations []*genai.Citation
-	if candidate.CitationMetadata != nil {
-		sdkCitations = candidate.CitationMetadata.Citations
-	}
-	extractedAttributions, err := extractGroundingAttributions(sdkCitations) // From grounding.go
+	grounding, err := extractGroundingMetadata(candidate.GroundingMetadata)
 	if err != nil {
-		return nil, fmt.Errorf("failed to process grounding attributions: %w", err)
+		return nil, errors.Wrapf(err, "failed to extract grounding metadata")
 	}
 
 	// Your application's Response struct (from your types.go)
 	libResponse := &Response{
 		GeneratedText:         generatedTextBuilder.String(),
-		GroundingAttributions: extractedAttributions,
+		GroundingAttributions: grounding,
 		SearchSuggestions:     []string{}, // TODO: Populate if new SDK provides similar info
 		PromptFeedback:        genaiResp.PromptFeedback,
 		Candidates:            genaiResp.Candidates,
@@ -197,7 +192,7 @@ func (c *Client) processGenaiResponse(genaiResp *genai.GenerateContentResponse, 
 	}
 
 	if libResponse.GeneratedText == "" && len(libResponse.GroundingAttributions) == 0 {
-		return nil, ErrNoContentGenerated // Assuming ErrNoContentGenerated
+		return nil, ErrNoContentGenerated
 	}
 
 	return libResponse, nil
@@ -223,10 +218,29 @@ func containsSafetyBlockDetails(details []any) bool {
 	return false
 }
 
+func (c *Client) ListAvailableModels(ctx context.Context) ([]string, error) {
+	var models []string
+	for m, err := range c.genaiClient.Models.All(ctx) {
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to list models")
+		}
+		if m == nil {
+			continue
+		}
+		models = append(models, m.Name)
+	}
+
+	if len(models) == 0 {
+		return nil, errors.New("no models available")
+	}
+
+	return models, nil
+}
+
 // GenerateGroundedContent sends a query to the Gemini API using client's default model settings.
 func (c *Client) GenerateGroundedContent(ctx context.Context, query string) (*Response, error) {
 	if query == "" {
-		return nil, fmt.Errorf("%w: query cannot be empty", ErrInvalidParameter) // Assuming ErrInvalidParameter
+		return nil, errors.Wrapf(ErrInvalidParameter, "query cannot be empty")
 	}
 
 	params := &GenerationParams{
@@ -239,10 +253,10 @@ func (c *Client) GenerateGroundedContent(ctx context.Context, query string) (*Re
 // GenerateGroundedContentWithParams sends a query to the Gemini API with per-request parameters.
 func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *GenerationParams) (*Response, error) {
 	if params == nil {
-		return nil, fmt.Errorf("%w: generation parameters cannot be nil", ErrInvalidParameter) // Assuming ErrInvalidParameter
+		return nil, errors.Wrapf(ErrInvalidParameter, "generation parameters cannot be nil")
 	}
 	if params.Prompt == "" {
-		return nil, fmt.Errorf("%w: prompt within generation parameters cannot be empty", ErrInvalidParameter) // Assuming ErrInvalidParameter
+		return nil, errors.Wrapf(ErrInvalidParameter, "prompt within generation parameters cannot be empty")
 	}
 
 	modelName := c.config.ModelName
@@ -250,7 +264,7 @@ func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *
 		modelName = params.ModelName
 	}
 	if modelName == "" {
-		return nil, newAPIError(codes.InvalidArgument, "model name is not configured", ErrInvalidModelName) // Assuming ErrInvalidModelName
+		return nil, newAPIError(codes.InvalidArgument, "model name is not configured", ErrInvalidModelName)
 	}
 
 	model := c.defaultModel

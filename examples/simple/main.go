@@ -15,22 +15,35 @@ func main() {
 
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
-		log.Fatal("Error: GEMINI_API_KEY environment variable is not set.")
+		fmt.Fprintln(os.Stderr, "Error: GEMINI_API_KEY environment variable is not set.")
+		os.Exit(1)
 	}
 
 	// Initialize the client.
-	// Assumes default model (e.g., "gemini-2.5-flash") and Google Search Tool are enabled by default.
-	client, err := search.NewClient(ctx, apiKey)
+	client, err := search.NewClient(ctx, apiKey, search.WithModelName("gemini-2.5-flash-preview-04-17")) //
 	if err != nil {
-		log.Fatalf("Error creating client: %v", err)
+		fmt.Fprintf(os.Stderr, "Error creating client:\n%+v\n", err)
+		os.Exit(1)
 	}
+
+	// Optionally, list available models (commented out for brevity).
+	// Uncomment the following lines to list available models.
+	// models, err := client.ListAvailableModels(ctx)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Error listing available models:\n%+v\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println("Available models:")
+	// for _, model := range models {
+	// 	fmt.Printf("- %s\n", model)
+	// }
 
 	// Create a context for the request, e.g., with a 30-second timeout.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Define the search query (prompt).
-	query := "What are the latest advancements in Generative AI safety, and what are some key research papers published in the last year?"
+	query := "What is the State-of-the-Art LLM model for Coding tasks at this time?"
 	if len(os.Args) > 1 {
 		query = os.Args[1] // Allow query override from command-line argument.
 	}
@@ -41,11 +54,15 @@ func main() {
 	if err != nil {
 		// Example error handling; specific helper functions (e.g., IsAPIError) will be defined in errors.go.
 		if apiErr, ok := search.GetAPIError(err); ok {
-			log.Fatalf("API Error: %v (StatusCode: %d)", apiErr.Message, apiErr.StatusCode)
+			// For APIError, we might want to show the specific API message and code,
+			// but also the full wrapped error for more context if needed.
+			fmt.Fprintf(os.Stderr, "API Error: %s (StatusCode: %d)\nFull error details:\n%+v\n", apiErr.Message, apiErr.StatusCode, err)
 		} else if search.IsContentBlockedError(err) {
-			log.Fatalf("Content generation blocked: %v", err)
+			fmt.Fprintf(os.Stderr, "Content generation blocked:\n%+v\n", err)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error generating grounded content:\n%+v\n", err)
 		}
-		log.Fatalf("Error generating grounded content: %v", err)
+		os.Exit(1)
 	}
 
 	// Display the generated text.
@@ -59,8 +76,13 @@ func main() {
 		for i, attr := range response.GroundingAttributions {
 			fmt.Printf("%d. Title: %s\n", i+1, attr.Title) // Assumes attr.Title from types.go
 			fmt.Printf("   URL: %s\n", attr.URL)           // Assumes attr.URL from types.go
-			if attr.Snippet != "" {                        // Assumes attr.Snippet from types.go
-				fmt.Printf("   Snippet: %s\n", attr.Snippet)
+			if attr.Segments != nil {
+				fmt.Println("   Segments:")
+				for _, segment := range attr.Segments {
+					fmt.Printf("   - Start: %d, End: %d, Text: \"%s\"\n", segment.StartIndex, segment.EndIndex, segment.Text)
+				}
+			} else {
+				fmt.Println("   No segments available.")
 			}
 		}
 	} else {

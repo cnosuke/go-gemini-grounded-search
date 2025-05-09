@@ -1,9 +1,10 @@
 package search
 
 import (
-	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 // ClientOption is a function type used to apply configuration options to a ClientConfig.
@@ -29,7 +30,7 @@ func WithModelName(name string) ClientOption {
 func WithDefaultTemperature(temp float32) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if temp < 0.0 || temp > 2.0 { // Common range for Gemini, can be adjusted.
-			return fmt.Errorf("%w: temperature must be between 0.0 and 2.0, got %f", ErrInvalidParameter, temp)
+			return errors.Wrapf(ErrInvalidParameter, "temperature must be between 0.0 and 2.0, got %f", temp)
 		}
 		cfg.DefaultTemperature = &temp
 		return nil
@@ -41,7 +42,7 @@ func WithDefaultTemperature(temp float32) ClientOption {
 func WithDefaultMaxOutputTokens(tokens int32) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if tokens <= 0 {
-			return fmt.Errorf("%w: max output tokens must be positive, got %d", ErrInvalidParameter, tokens)
+			return errors.Wrapf(ErrInvalidParameter, "max output tokens must be positive, got %d", tokens)
 		}
 		cfg.DefaultMaxOutputTokens = &tokens
 		return nil
@@ -53,7 +54,7 @@ func WithDefaultMaxOutputTokens(tokens int32) ClientOption {
 func WithDefaultTopK(k int32) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if k <= 0 {
-			return fmt.Errorf("%w: top_k must be positive if set, got %d", ErrInvalidParameter, k)
+			return errors.Wrapf(ErrInvalidParameter, "top_k must be positive if set, got %d", k)
 		}
 		cfg.DefaultTopK = &k
 		return nil
@@ -65,7 +66,7 @@ func WithDefaultTopK(k int32) ClientOption {
 func WithDefaultTopP(p float32) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if p <= 0.0 || p > 1.0 { // TopP is often > 0 and <= 1
-			return fmt.Errorf("%w: top_p must be between 0.0 (exclusive) and 1.0 (inclusive), got %f", ErrInvalidParameter, p)
+			return errors.Wrapf(ErrInvalidParameter, "top_p must be between 0.0 (exclusive) and 1.0 (inclusive), got %f", p)
 		}
 		cfg.DefaultTopP = &p
 		return nil
@@ -77,11 +78,11 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 	return func(cfg *ClientConfig) error {
 		for _, s := range settings {
 			if s == nil {
-				return fmt.Errorf("%w: safety setting cannot be nil", ErrInvalidParameter)
+				return errors.Wrap(ErrInvalidParameter, "safety setting cannot be nil")
 			}
 			// Basic validation, can be expanded if HarmCategory/HarmBlockThreshold have exhaustive lists defined
 			if s.Category == "" || s.Threshold == "" {
-				return fmt.Errorf("%w: safety setting category and threshold cannot be empty", ErrInvalidParameter)
+				return errors.Wrap(ErrInvalidParameter, "safety setting category and threshold cannot be empty")
 			}
 		}
 		cfg.DefaultSafetySettings = settings
@@ -93,7 +94,7 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 func WithHTTPClient(client *http.Client) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if client == nil {
-			return fmt.Errorf("%w: HTTP client cannot be nil if provided", ErrInvalidParameter)
+			return errors.Wrap(ErrInvalidParameter, "HTTP client cannot be nil if provided")
 		}
 		cfg.HTTPClient = client
 		return nil
@@ -105,7 +106,7 @@ func WithHTTPClient(client *http.Client) ClientOption {
 func WithRequestTimeout(timeout time.Duration) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if timeout < 0 {
-			return fmt.Errorf("%w: request timeout cannot be negative, got %v", ErrInvalidParameter, timeout)
+			return errors.Wrapf(ErrInvalidParameter, "request timeout cannot be negative, got %v", timeout)
 		}
 		cfg.RequestTimeout = timeout
 		return nil

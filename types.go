@@ -1,8 +1,7 @@
-// go-gemini-grounded-search/types.go
 package search
 
 import (
-	"google.golang.org/genai" // UPDATED: Use the new SDK import path
+	"google.golang.org/genai"
 )
 
 // --- Harm Categories and Block Thresholds ---
@@ -50,23 +49,33 @@ type SafetySetting struct {
 // to ground its generated content. This is a custom structure for your application.
 type GroundingAttribution struct {
 	// Title of the web page or document from which the content was sourced.
-	// Note: The new SDK's genai.CitationSource may not directly provide a 'Title'.
-	// This might need to be fetched from the URI or populated differently if required.
 	Title string `json:"title,omitempty"`
 
-	// URL of the source, likely derived from genai.CitationSource.URI.
+	// Domain of the source
+	Domain string `json:"domain,omitempty"`
+
+	// URL of the sourc
 	URL string `json:"url,omitempty"`
 
-	// Snippet is a piece of text content extracted from the source
-	// that directly contributed to the generated response.
-	// Note: The new SDK's genai.CitationSource may not directly provide a 'Snippet'.
-	// This might need to be populated by custom logic (e.g., fetching content from URI) if required.
-	Snippet string `json:"snippet,omitempty"`
+	// Segments contains the text segment that was generated.
+	Segments []GroundingAttributionSegment `json:"segments,omitempty"`
+}
 
-	// RawSource holds the underlying SDK's CitationSource type for access to more detailed
-	// grounding information provided by the SDK.
-	// It's not marshalled to JSON by default.
-	RawSource *genai.Citation `json:"-"` // UPDATED: Was RawAttribution, now points to SDK's CitationSource
+type GroundingAttributionSegment struct {
+	// StartIndex is the starting index of the segment in the generated text.
+	StartIndex int `json:"start_index,omitempty"`
+
+	// PartIndex is the index of the part in the generated text.
+	PartIndex int `json:"part_index,omitempty"`
+
+	// EndIndex is the ending index of the segment in the generated text.
+	EndIndex int `json:"end_index,omitempty"`
+
+	// Text is the actual text segment that was generated.
+	Text string `json:"text,omitempty"`
+
+	// ConfidenceScore is the model's confidence score for this segment.
+	ConfidenceScore float32 `json:"confidence_score,omitempty"`
 }
 
 // Response is the structured output returned by methods like GenerateGroundedContent.
@@ -76,7 +85,7 @@ type Response struct {
 	GeneratedText string `json:"generated_text"`
 
 	// GroundingAttributions lists the sources that the model cited.
-	// These will be constructed by your application from the genai.Candidate.CitationMetadata.CitationSources.
+	// These will be constructed by your application from the genai.GroundingMetadata
 	GroundingAttributions []GroundingAttribution `json:"grounding_attributions,omitempty"`
 
 	// SearchSuggestions contains a list of related search queries, if provided by the API or model.

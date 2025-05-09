@@ -46,7 +46,7 @@ func main() {
 	}
 
 	// Create a new client with your API key
-	// By default, it will use a model like "gemini-2.5-flash" and enable Google Search Tool
+	// By default, it will use a model like "gemini-2.0-flash" and enable Google Search Tool
 	client, err := search.NewClient(apiKey)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -108,7 +108,7 @@ func main() {
 	// Create a client with options
 	client, err := search.NewClient(
 		apiKey,
-		search.WithModel("gemini-2.5-flash"), // Use a different model
+		search.WithModel("gemini-2.0-flash"), // Use a different model
 		search.WithTemperature(0.5),                // Adjust temperature
 		// Add other options as they are developed, e.g.,
 		// search.WithTimeout(60*time.Second),
@@ -151,7 +151,7 @@ client, err := search.NewClient("your-api-key")
 // Create a client with options
 client, err := search.NewClient(
     "your-api-key",
-    search.WithModel("gemini-2.5-flash"),
+    search.WithModel("gemini-2.0-flash"),
     search.WithTemperature(0.2),
 )
 ```
@@ -201,7 +201,7 @@ _(Specific error handling functions like `IsAPIError`, `IsContentBlockedError`, 
 
 The library supports several configuration options through the functional options pattern passed to `NewClient`:
 
-- `WithModel(modelName string)`: Specifies which Gemini model to use (e.g., "gemini-2.5-flash").
+- `WithModel(modelName string)`: Specifies which Gemini model to use (e.g., "gemini-2.0-flash").
 - `WithTemperature(temp float32)`: Sets the generation temperature (0.0 for more factual, higher for more creative).
 - _(More options will be added as the library develops, e.g., `WithTimeout`, `WithMaxRetries` if not handled by the underlying SDK, specific grounding parameters, etc.)_
 

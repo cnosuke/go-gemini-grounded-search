@@ -16,8 +16,8 @@ const (
 // Default configuration values for the client.
 const (
 	// DefaultModelName is the default Gemini model used if not specified by the user.
-	// "gemini-2.5-flash" is chosen for its balance of speed and capability for grounded search.
-	DefaultModelName = "gemini-2.5-flash"
+	// "gemini-2.0-flash" is chosen for its balance of speed and capability for grounded search.
+	DefaultModelName = "gemini-2.0-flash"
 
 	// DefaultTemperature for grounded search tasks.
 	// 0.0f is generally recommended for factuality and to minimize hallucinations.
@@ -25,10 +25,6 @@ const (
 
 	// DefaultRequestTimeout is the default duration for API requests.
 	DefaultRequestTimeout = 60 * time.Second
-
-	// DefaultEndpoint is an empty string, which means the genai SDK will use its default API endpoint.
-	// Users can override this via ClientConfig if needed (e.g., for regional endpoints or proxies).
-	DefaultEndpoint = ""
 )
 
 // Note: Constants for HarmCategory and HarmBlockThreshold are defined in types.go

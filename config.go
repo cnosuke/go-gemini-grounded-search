@@ -1,7 +1,6 @@
 package search
 
 import (
-	"errors"
 	"net/http"
 	"time"
 )
@@ -12,7 +11,7 @@ type ClientConfig struct {
 	// This field is mandatory.
 	APIKey string
 
-	// ModelName is the default Gemini model to be used for requests (e.g., "gemini-2.5-flash").
+	// ModelName is the default Gemini model to be used for requests (e.g., "gemini-2.0-flash").
 	// Can be overridden per request via GenerationParams.
 	ModelName string
 
@@ -59,21 +58,19 @@ type ClientConfig struct {
 // These defaults will be defined in constants.go.
 func newDefaultClientConfig(apiKey string) (*ClientConfig, error) {
 	if apiKey == "" {
-		return nil, errors.New("API key cannot be empty") // This specific error will be defined in errors.go
+		return nil, ErrMissingAPIKey
 	}
-	defaultTemp := DefaultTemperature // From constants.go
-	// Add other defaults as needed, e.g. for TopK, TopP if we want library-level defaults
-	// different from API/SDK defaults.
+	defaultTemp := DefaultTemperature
 
 	return &ClientConfig{
 		APIKey:             apiKey,
-		ModelName:          DefaultModelName, // From constants.go
+		ModelName:          DefaultModelName,
 		DefaultTemperature: &defaultTemp,
 		// DefaultMaxOutputTokens, DefaultTopK, DefaultTopP can be left nil to use SDK/API defaults
 		// DefaultSafetySettings can be initialized with common safe defaults or left nil
-		DefaultSafetySettings:           nil,                   // Or a predefined safe default set from constants.go
-		DisableGoogleSearchToolGlobally: false,                 // Enable grounding by default for this library
-		RequestTimeout:                  DefaultRequestTimeout, // From constants.go
+		DefaultSafetySettings:           nil,   // Or a predefined safe default set from constants.go
+		DisableGoogleSearchToolGlobally: false, // Enable grounding by default for this library
+		RequestTimeout:                  DefaultRequestTimeout,
 	}, nil
 }
 
@@ -82,7 +79,7 @@ func newDefaultClientConfig(apiKey string) (*ClientConfig, error) {
 func (c *ClientConfig) validate() error {
 	if c.APIKey == "" {
 		// This error (e.g., ErrMissingAPIKey) will be defined in errors.go
-		return errors.New("API key is missing in client configuration")
+		return ErrMissingAPIKey
 	}
 	// Add other validations as necessary, e.g., for ModelName format, etc.
 	return nil
