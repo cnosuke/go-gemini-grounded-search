@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/cnosuke/go-gemini-grounded-search.svg)](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cnosuke/go-gemini-grounded-search)](https://goreportcard.com/report/github.com/cnosuke/go-gemini-grounded-search)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A Go client library for Google's Gemini API, focusing on leveraging its Google Search Tool capabilities for grounded generation. This library provides a simple and idiomatic Go interface to interact with Gemini, making it easy to get answers based on up-to-date information from the web.
 
@@ -12,11 +12,11 @@ A Go client library for Google's Gemini API, focusing on leveraging its Google S
 - Support for Gemini API's Google Search Tool (Grounding) for fact-based responses
 - Configurable via functional options pattern (e.g., model selection, temperature)
 - Clear error handling for API interactions
-- Typed request and response structures, including access to grounding metadata
+- Typed request and response structures, including access to grounding metadata (sources and text segments)
 
 ## Prerequisites
 
-- Go 1.20 or later
+- Go 1.20 or later (refer to `go.mod` in the library for precise module dependencies)
 - A Google Gemini API Key. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Installation
@@ -45,16 +45,16 @@ func main() {
 		log.Fatal("Please set the GEMINI_API_KEY environment variable.")
 	}
 
+	// Create a context
+	ctx := context.Background()
+
 	// Create a new client with your API key
-	// By default, it will use a model like "gemini-2.0-flash" and enable Google Search Tool
-	client, err := search.NewClient(apiKey)
+	// By default, it will use a model like "gemini-2.0-flash" (see constants.go)
+	// and enable Google Search Tool.
+	client, err := search.NewClient(ctx, apiKey)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	defer client.Close() // Important to close the client when done
-
-	// Create a context
-	ctx := context.Background()
 
 	// Perform a search (grounded generation)
 	query := "What are the latest advancements in AI?"
@@ -70,10 +70,8 @@ func main() {
 	if len(response.GroundingAttributions) > 0 {
 		fmt.Println("Sources (Grounding Attributions):")
 		for i, attr := range response.GroundingAttributions {
-			fmt.Printf("%d. [%s](%s)\n", i+1, attr.Title, attr.URL)
-			if attr.Snippet != "" {
-				fmt.Printf("   Snippet: %s\n", attr.Snippet)
-			}
+			fmt.Printf("%d. Title: %s\n", i+1, attr.Title)
+			fmt.Printf("   URL: %s\n", attr.URL)
 		}
 	} else {
 		fmt.Println("No grounding attributions found for this response.")
@@ -95,6 +93,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	search "github.com/cnosuke/go-gemini-grounded-search"
 )
@@ -105,21 +104,28 @@ func main() {
 		log.Fatal("Please set the GEMINI_API_KEY environment variable.")
 	}
 
-	// Create a client with options
+	// Create a context
+	ctx := context.Background()
+
+	// Note: To avoid hallucinations and ensure responses are factually grounded,
+	// setting the temperature to 0.0 is strongly recommended.
+	// (note that 0.0 is already the default temperature value in this library)
+	var temperatureValue float32 = 0.0
+	var maxTokensValue int32 = 500
+
 	client, err := search.NewClient(
+		ctx,
 		apiKey,
-		search.WithModel("gemini-2.0-flash"), // Use a different model
-		search.WithTemperature(0.5),                // Adjust temperature
-		// Add other options as they are developed, e.g.,
-		// search.WithTimeout(60*time.Second),
-		// search.WithGroundingDisabled(), // If you want to allow disabling grounding
+		search.WithModelName("gemini-2.5-flash-preview-04-17"), // Use a specific model (see options.go)
+		search.WithDefaultTemperature(temperatureValue),        // Adjust temperature (see options.go)
+		search.WithDefaultMaxOutputTokens(maxTokensValue),      // Adjust max output tokens
+		search.WithRequestTimeout(90*time.Second),             // Set a request timeout
+		// search.WithGoogleSearchToolDisabled(true), // Example: to disable grounding globally
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
 	}
-	defer client.Close()
 
-	ctx := context.Background()
 	query := "Tell me a fun fact about the Go programming language, citing sources."
 	response, err := client.GenerateGroundedContent(ctx, query)
 	if err != nil {
@@ -138,7 +144,7 @@ func main() {
 
 ## API Reference
 
-For detailed API documentation, see the [Go Reference](https://www.google.com/url?sa=E&source=gmail&q=https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search). (Link will be active once the library is published)
+For detailed API documentation, see the [Go Reference](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search).
 
 ### Client
 
@@ -146,64 +152,78 @@ The `Client` is the main entry point for using the library:
 
 ```go
 // Create a new client
-client, err := search.NewClient("your-api-key")
+client, err := search.NewClient(ctx, "your-api-key")
 
 // Create a client with options
+var temp float32 = 0.2
 client, err := search.NewClient(
+    ctx,
     "your-api-key",
-    search.WithModel("gemini-2.0-flash"),
-    search.WithTemperature(0.2),
+    search.WithModelName("gemini-2.0-flash"),
+    search.WithDefaultTemperature(temp),
 )
 ```
 
 ### Generating Grounded Content
 
 ```go
-// Simple grounded content generation
+// Simple grounded content generation with default client settings
 response, err := client.GenerateGroundedContent(ctx, "your query string")
 
-// You might also want to provide a more structured way to pass parameters
-// if the Gemini API supports more granular control over the search/grounding.
-// For example:
-// params := &search.GenerationParams{
-//     Prompt: "your query string",
-//     // other parameters like desired source count, etc.
-// }
-// response, err := client.GenerateGroundedContentWithParams(ctx, params)
+// For more granular control per request, use GenerateGroundedContentWithParams:
+var tempValue float32 = 0.1
+var topKValue int32 = 10
+params := &search.GenerationParams{
+     Prompt:      "your query string with custom parameters",
+     Temperature: &tempValue,
+     TopK:        &topKValue,
+     // other parameters like ModelName, MaxOutputTokens, SafetySettings, etc.
+}
+response, err := client.GenerateGroundedContentWithParams(ctx, params)
 ```
 
 ## Error Handling
 
-The library provides detailed error information. Errors can be inspected to handle specific API issues:
+The library provides detailed error information. Errors can be inspected to handle specific API issues using helper functions from the `search` package (defined in `errors.go`):
 
 ```go
 if err != nil {
-    if search.IsAPIError(err) {
-        apiErr := search.GetAPIError(err) // Hypothetical function to get typed error
-        // Handle specific API errors, e.g., apiErr.StatusCode, apiErr.Message
-        log.Printf("API Error: Status %d, Message: %s", apiErr.StatusCode, apiErr.Message)
+    if apiErr, ok := search.GetAPIError(err); ok {
+        // Handle specific API errors
+        log.Printf("API Error: Status %s (%d), Message: %s, Details: %v", apiErr.StatusCode.String(), apiErr.StatusCode, apiErr.Message, apiErr.Details)
+        // You can also use other helper functions:
+        if search.IsAuthenticationError(err) {
+            log.Println("Authentication failed. Check your API key.")
+        } else if search.IsQuotaError(err) {
+            log.Println("API Quota exhausted.")
+        }
     } else if search.IsContentBlockedError(err) {
-        // Handle content blocked due to safety settings
-        log.Println("Content was blocked due to safety settings.")
-    } else if search.IsQuotaError(err) {
-        // Handle quota exhausted error
-        log.Println("API Quota exhausted.")
+        // Handle content blocked due to safety settings or other reasons
+        log.Println("Content was blocked. Original error:", err)
+    } else if errors.Is(err, search.ErrNoContentGenerated) {
+        log.Println("The model generated no content for the given prompt.")
     } else {
-        // Handle other types of errors (network, etc.)
+        // Handle other types of errors (network, invalid parameters before API call, etc.)
         log.Fatalf("An unexpected error occurred: %v", err)
     }
 }
 ```
 
-_(Specific error handling functions like `IsAPIError`, `IsContentBlockedError`, `IsQuotaError` will need to be defined in `errors.go` based on the errors returned by the official Go SDK for Gemini.)_
+The helper functions in `errors.go` (e.g., `IsAPIError`, `IsContentBlockedError`, `IsQuotaError`, `IsInvalidRequestError`, `IsServerError`) allow for robust error checking.
 
 ## Configuration
 
-The library supports several configuration options through the functional options pattern passed to `NewClient`:
+The library supports several configuration options through the functional options pattern passed to `NewClient` (see `options.go` for all available options):
 
-- `WithModel(modelName string)`: Specifies which Gemini model to use (e.g., "gemini-2.0-flash").
-- `WithTemperature(temp float32)`: Sets the generation temperature (0.0 for more factual, higher for more creative).
-- _(More options will be added as the library develops, e.g., `WithTimeout`, `WithMaxRetries` if not handled by the underlying SDK, specific grounding parameters, etc.)_
+- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-2.0-flash"`).
+- `WithDefaultTemperature(temp float32)`: Sets the default generation temperature (0.0 for more factual, higher for more creative).
+- `WithDefaultMaxOutputTokens(tokens int32)`: Sets the default maximum number of tokens to generate.
+- `WithDefaultTopK(k int32)`: Sets the default TopK sampling parameter.
+- `WithDefaultTopP(p float32)`: Sets the default TopP (nucleus) sampling parameter.
+- `WithDefaultSafetySettings(settings []*SafetySetting)`: Sets default safety settings.
+- `WithHTTPClient(client *http.Client)`: Provides a custom HTTP client.
+- `WithRequestTimeout(timeout time.Duration)`: Sets a default timeout for API requests.
+- `WithGoogleSearchToolDisabled(disabled bool)`: Allows disabling the Google Search Tool globally for the client.
 
 ## Development Status
 
