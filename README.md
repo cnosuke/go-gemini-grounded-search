@@ -116,7 +116,7 @@ func main() {
 	client, err := search.NewClient(
 		ctx,
 		apiKey,
-		search.WithModelName("gemini-2.5-flash-preview-04-17"), // Use a specific model (see options.go)
+		search.WithModelName("gemini-2.5-flash-preview-05-20"), // Use a specific model (see options.go)
 		search.WithDefaultTemperature(temperatureValue),        // Adjust temperature (see options.go)
 		search.WithDefaultMaxOutputTokens(maxTokensValue),      // Adjust max output tokens
 		search.WithRequestTimeout(90*time.Second),             // Set a request timeout

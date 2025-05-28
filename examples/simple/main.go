@@ -67,7 +67,7 @@ func main() {
 
 	// Initialize the client.
 	client, err := search.NewClient(ctx, apiKey,
-		search.WithModelName("gemini-2.5-flash-preview-04-17"),
+		search.WithModelName("gemini-2.5-flash-preview-05-20"),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating client:\n%+v\n", err)
