@@ -121,6 +121,14 @@ func WithGoogleSearchToolDisabled(disabled bool) ClientOption {
 	}
 }
 
+// WithNoRedirection disables URL redirection and keeps the original URL.
+func WithNoRedirection() ClientOption {
+	return func(cfg *ClientConfig) error {
+		cfg.NoRedirection = true
+		return nil
+	}
+}
+
 // applyClientOptions applies the given options to the ClientConfig.
 // This is an unexported helper function called by NewClient.
 func applyClientOptions(cfg *ClientConfig, opts ...ClientOption) error {

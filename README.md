@@ -13,6 +13,7 @@ A Go client library for Google's Gemini API, focusing on leveraging its Google S
 - Configurable via functional options pattern (e.g., model selection, temperature)
 - Clear error handling for API interactions
 - Typed request and response structures, including access to grounding metadata (sources and text segments)
+- Optional URL redirection resolution to get original source URLs instead of redirect URLs
 
 ## Prerequisites
 
@@ -23,6 +24,16 @@ A Go client library for Google's Gemini API, focusing on leveraging its Google S
 
 ```bash
 go get github.com/cnosuke/go-gemini-grounded-search
+```
+
+### CLI
+
+```bash
+# via Makefile
+make install        # installs gemini-search to $GOBIN
+
+# or directly
+go install github.com/cnosuke/go-gemini-grounded-search/cmd/gemini-search@latest
 ```
 
 ## Quick Start
@@ -79,6 +90,13 @@ func main() {
 }
 ```
 
+## CLI Usage
+
+```bash
+export GEMINI_API_KEY="your-api-key"
+gemini-search "幼児を連れても安心のオススメ東京観光スポットを教えて"
+```
+
 ## Advanced Usage
 
 ### With Options
@@ -120,6 +138,7 @@ func main() {
 		search.WithDefaultTemperature(temperatureValue),        // Adjust temperature (see options.go)
 		search.WithDefaultMaxOutputTokens(maxTokensValue),      // Adjust max output tokens
 		search.WithRequestTimeout(90*time.Second),             // Set a request timeout
+		search.WithNoRedirection(),                            // Resolve original URLs instead of redirect URLs
 		// search.WithGoogleSearchToolDisabled(true), // Example: to disable grounding globally
 	)
 	if err != nil {
@@ -182,6 +201,25 @@ params := &search.GenerationParams{
 response, err := client.GenerateGroundedContentWithParams(ctx, params)
 ```
 
+### URL Redirection Resolution
+
+By default, Gemini's grounding service returns redirect URLs (e.g., `https://vertexaisearch.cloud.google.com/grounding-api-redirect/...`) instead of the original source URLs. You can enable automatic resolution to get the actual source URLs:
+
+```go
+// Enable automatic URL redirection resolution
+client, err := search.NewClient(
+    ctx,
+    apiKey,
+    search.WithNoRedirection(), // This will resolve redirect URLs to original URLs
+)
+```
+
+This feature is useful when you want to:
+
+- Display the actual source domain to users
+- Perform further analysis on the source URLs
+- Cache or store references to the original content
+
 ## Error Handling
 
 The library provides detailed error information. Errors can be inspected to handle specific API issues using helper functions from the `search` package (defined in `errors.go`):
@@ -224,6 +262,7 @@ The library supports several configuration options through the functional option
 - `WithHTTPClient(client *http.Client)`: Provides a custom HTTP client.
 - `WithRequestTimeout(timeout time.Duration)`: Sets a default timeout for API requests.
 - `WithGoogleSearchToolDisabled(disabled bool)`: Allows disabling the Google Search Tool globally for the client.
+- `WithNoRedirection()`: Resolves original URLs from redirect URLs returned by the grounding service.
 
 ## Development Status
 

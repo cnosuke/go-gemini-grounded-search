@@ -52,6 +52,10 @@ type ClientConfig struct {
 	// Grounding can then be explicitly enabled via GenerationParams or specific methods.
 	// Given the library name, this would typically be false.
 	DisableGoogleSearchToolGlobally bool
+
+	// NoRedirection, if true, instructs the client to resolve the original URL
+	// from any redirected URL returned by the grounding service.
+	NoRedirection bool
 }
 
 // newDefaultClientConfig creates a ClientConfig with sensible default values.
@@ -71,6 +75,7 @@ func newDefaultClientConfig(apiKey string) (*ClientConfig, error) {
 		DefaultSafetySettings:           nil,   // Or a predefined safe default set from constants.go
 		DisableGoogleSearchToolGlobally: false, // Enable grounding by default for this library
 		RequestTimeout:                  DefaultRequestTimeout,
+		NoRedirection:                   false, // Default to following redirects
 	}, nil
 }
 

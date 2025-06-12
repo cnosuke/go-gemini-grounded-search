@@ -31,7 +31,10 @@ package search
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"google.golang.org/genai"
@@ -44,6 +47,7 @@ import (
 type Client struct {
 	config                  ClientConfig                 // Resolved configuration after applying options
 	genaiClient             *genai.Client                // Underlying client from the official Google AI Go SDK
+	httpClient              *http.Client                 // HTTP client for non-API requests like redirection resolving
 	defaultModel            string                       // Default model name (e.g., "gemini-2.0-flash")
 	defaultGenContentConfig *genai.GenerateContentConfig // Default generation configuration
 	userAgent               string                       // Combined user-agent string
@@ -119,6 +123,7 @@ func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Clien
 	client := &Client{
 		config:                  *cfg,
 		genaiClient:             gClient,
+		httpClient:              cfg.HTTPClient, // Use the configured client, or nil
 		defaultModel:            cfg.ModelName,
 		defaultGenContentConfig: &gConf,
 	}
@@ -126,7 +131,7 @@ func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Clien
 }
 
 // processGenaiResponse is a helper function to handle the response from genai.GenerateContent.
-func (c *Client) processGenaiResponse(genaiResp *genai.GenerateContentResponse, callErr error) (*Response, error) {
+func (c *Client) processGenaiResponse(ctx context.Context, genaiResp *genai.GenerateContentResponse, callErr error) (*Response, error) {
 	if callErr != nil {
 		s, ok := status.FromError(callErr)
 		if ok {
@@ -181,6 +186,11 @@ func (c *Client) processGenaiResponse(genaiResp *genai.GenerateContentResponse, 
 		return nil, errors.Wrapf(err, "failed to extract grounding metadata")
 	}
 
+	// If redirection is disabled, resolve the original URL.
+	if c.config.NoRedirection {
+		c.resolveGroundingURLs(ctx, grounding)
+	}
+
 	// Your application's Response struct (from your types.go)
 	libResponse := &Response{
 		GeneratedText:         generatedTextBuilder.String(),
@@ -218,6 +228,7 @@ func containsSafetyBlockDetails(details []any) bool {
 	return false
 }
 
+// ListAvailableModels returns a list of available Gemini model names.
 func (c *Client) ListAvailableModels(ctx context.Context) ([]string, error) {
 	var models []string
 	for m, err := range c.genaiClient.Models.All(ctx) {
@@ -326,5 +337,161 @@ func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *
 
 	r, err := c.genaiClient.Models.GenerateContent(ctx, model, contents, &currentConfig)
 
-	return c.processGenaiResponse(r, err)
+	return c.processGenaiResponse(ctx, r, err)
+}
+
+// resolveOriginURL traces the original URL of a given URL that might have been
+// redirected, typically by services like Google's click tracking.
+// It sends HEAD requests and follows "Location" headers until it finds a non-redirect
+// response or hits a limit.
+func resolveOriginURL(ctx context.Context, customClient *http.Client, urlStr string) (string, error) {
+	const maxRedirects = 10
+	visited := make(map[string]bool)
+	currentURL := urlStr
+
+	// Use the provided custom client if available, otherwise create a dedicated client
+	var client *http.Client
+	if customClient != nil {
+		// Clone the custom client but override CheckRedirect behavior
+		client = &http.Client{
+			Transport: customClient.Transport,
+			Timeout:   3 * time.Second, // Override timeout for URL resolution
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse // Important: tells the client to return the redirect response
+			},
+		}
+	} else {
+		// Create a dedicated client for this task
+		client = &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse // Important: tells the client to return the redirect response
+			},
+			Timeout: 3 * time.Second, // Fast per-request timeout to prevent hanging
+		}
+	}
+
+	for range maxRedirects {
+		if visited[currentURL] {
+			return "", errors.Newf("detected a redirect loop at %s", currentURL)
+		}
+		visited[currentURL] = true
+
+		req, err := http.NewRequestWithContext(ctx, "HEAD", currentURL, nil)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to create request for %s", currentURL)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to send HEAD request to %s", currentURL)
+		}
+		defer resp.Body.Close()
+
+		// If it's a redirect status code...
+		if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
+			location, err := resp.Location()
+			if err != nil {
+				if err == http.ErrNoLocation {
+					// It's a 3xx status but no Location header. This is unusual.
+					// We'll treat the current URL as the final one.
+					return currentURL, nil
+				}
+				return "", errors.Wrapf(err, "failed to get location header from %s", currentURL)
+			}
+			currentURL = location.String()
+		} else {
+			// Not a redirect, so we've found the final destination.
+			return currentURL, nil
+		}
+	}
+
+	return "", errors.Newf("exceeded max redirects (%d) starting from %s", maxRedirects, urlStr)
+}
+
+// urlResolveJob represents a job for URL resolution
+type urlResolveJob struct {
+	index int
+	url   string
+}
+
+// urlResolveResult represents the result of URL resolution
+type urlResolveResult struct {
+	index int
+	url   string
+	err   error
+}
+
+// resolveGroundingURLs resolves redirect URLs to their original URLs using worker pattern
+func (c *Client) resolveGroundingURLs(ctx context.Context, grounding []GroundingAttribution) {
+	if len(grounding) == 0 {
+		return
+	}
+
+	// Create context with timeout for URL resolution
+	resolveCtx, cancel := c.createResolveContext(ctx)
+	defer cancel()
+
+	// Worker pattern implementation
+	const numWorkers = 8
+	jobs := make(chan urlResolveJob, len(grounding))
+	results := make(chan urlResolveResult, len(grounding))
+
+	// Start workers
+	for w := 0; w < numWorkers; w++ {
+		go c.urlResolveWorker(resolveCtx, jobs, results)
+	}
+
+	// Send jobs
+	jobCount := 0
+	for i := range grounding {
+		if grounding[i].URL != "" {
+			jobs <- urlResolveJob{index: i, url: grounding[i].URL}
+			jobCount++
+		}
+	}
+	close(jobs)
+
+	// Collect results
+	for range jobCount {
+		select {
+		case result := <-results:
+			if result.err == nil && result.url != "" {
+				grounding[result.index].URL = result.url
+			} else if result.err != nil {
+				// Log the error but continue; non-fatal.
+				log.Printf("warning: failed to resolve origin URL for index %d: %v", result.index+1, result.err)
+			}
+		case <-resolveCtx.Done():
+			log.Printf("warning: URL resolution timed out, some URLs may remain unresolved")
+			return
+		}
+	}
+}
+
+// urlResolveWorker processes URL resolution jobs
+func (c *Client) urlResolveWorker(ctx context.Context, jobs <-chan urlResolveJob, results chan<- urlResolveResult) {
+	for job := range jobs {
+		origin, err := resolveOriginURL(ctx, c.httpClient, job.url)
+		results <- urlResolveResult{
+			index: job.index,
+			url:   origin,
+			err:   err,
+		}
+	}
+}
+
+// createResolveContext creates a context with appropriate timeout for URL resolution
+// The caller is responsible for calling the returned cancel function.
+func (c *Client) createResolveContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	// Use remaining time from parent context, but cap at reasonable limit
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining > 20*time.Second {
+			// Cap URL resolution time to 20 seconds to leave time for main processing
+			return context.WithTimeout(ctx, 20*time.Second)
+		}
+		return ctx, func() {} // No-op cancel function for existing context
+	}
+	// No deadline in parent context, set a reasonable timeout
+	return context.WithTimeout(ctx, 15*time.Second)
 }

@@ -38,3 +38,10 @@ example:
 deps:
 	go mod tidy
 	$(if $(shell which golint),,go install golang.org/x/lint/golint@latest)
+
+.PHONY: gemini-search install
+gemini-search:
+	go build -o bin/gemini-search ./cmd/gemini-search
+
+install:
+	go install ./cmd/gemini-search

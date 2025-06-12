@@ -61,6 +61,7 @@ type GroundingAttribution struct {
 	Segments []GroundingAttributionSegment `json:"segments,omitempty"`
 }
 
+// GroundingAttributionSegment represents a text segment within a grounding attribution.
 type GroundingAttributionSegment struct {
 	// StartIndex is the starting index of the segment in the generated text.
 	StartIndex int `json:"start_index,omitempty"`

@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/cockroachdb/errors v1.12.0
+	github.com/urfave/cli/v3 v3.3.3
 	google.golang.org/api v0.197.0
 	google.golang.org/genai v1.4.0
 	google.golang.org/grpc v1.66.2
@@ -22,11 +23,8 @@ require (
 	github.com/google/s2a-go v0.1.8 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
-	github.com/k0kubun/pp/v3 v3.4.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
