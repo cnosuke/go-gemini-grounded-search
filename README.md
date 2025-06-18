@@ -60,7 +60,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create a new client with your API key
-	// By default, it will use a model like "gemini-2.0-flash" (see constants.go)
+	// By default, it will use a model like "gemini-2.5-flash" (see constants.go)
 	// and enable Google Search Tool.
 	client, err := search.NewClient(ctx, apiKey)
 	if err != nil {
@@ -134,12 +134,11 @@ func main() {
 	client, err := search.NewClient(
 		ctx,
 		apiKey,
-		search.WithModelName("gemini-2.5-flash-preview-05-20"), // Use a specific model (see options.go)
+		search.WithModelName("gemini-2.5-flash"),               // Use a specific model (see options.go)
 		search.WithDefaultTemperature(temperatureValue),        // Adjust temperature (see options.go)
 		search.WithDefaultMaxOutputTokens(maxTokensValue),      // Adjust max output tokens
-		search.WithRequestTimeout(90*time.Second),             // Set a request timeout
-		search.WithNoRedirection(),                            // Resolve original URLs instead of redirect URLs
-		// search.WithGoogleSearchToolDisabled(true), // Example: to disable grounding globally
+		search.WithRequestTimeout(90*time.Second),              // Set a request timeout
+		search.WithNoRedirection(),                             // Resolve original URLs instead of redirect URLs
 	)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -178,7 +177,7 @@ var temp float32 = 0.2
 client, err := search.NewClient(
     ctx,
     "your-api-key",
-    search.WithModelName("gemini-2.0-flash"),
+    search.WithModelName("gemini-2.5-flash"),
     search.WithDefaultTemperature(temp),
 )
 ```
@@ -253,7 +252,7 @@ The helper functions in `errors.go` (e.g., `IsAPIError`, `IsContentBlockedError`
 
 The library supports several configuration options through the functional options pattern passed to `NewClient` (see `options.go` for all available options):
 
-- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-2.0-flash"`).
+- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-2.5-flash"`).
 - `WithDefaultTemperature(temp float32)`: Sets the default generation temperature (0.0 for more factual, higher for more creative).
 - `WithDefaultMaxOutputTokens(tokens int32)`: Sets the default maximum number of tokens to generate.
 - `WithDefaultTopK(k int32)`: Sets the default TopK sampling parameter.
