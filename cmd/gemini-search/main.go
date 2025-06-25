@@ -55,8 +55,7 @@ func main() {
 
 			var clientOpts []search.ClientOption
 			clientOpts = append(clientOpts, search.WithNoRedirection())
-			if model == "" {
-
+			if model != "" {
 				clientOpts = append(clientOpts, search.WithModelName(model))
 			}
 

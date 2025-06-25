@@ -340,15 +340,10 @@ func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *
 	return c.processGenaiResponse(ctx, r, err)
 }
 
-// resolveOriginURL traces the original URL of a given URL that might have been
-// redirected, typically by services like Google's click tracking.
-// It sends HEAD requests and follows "Location" headers until it finds a non-redirect
-// response or hits a limit.
+// resolveOriginURL resolves one level of redirection for a given URL.
+// It performs a single HEAD request to check if the URL redirects and returns
+// the redirect destination, or the original URL if no redirect is found.
 func resolveOriginURL(ctx context.Context, customClient *http.Client, urlStr string) (string, error) {
-	const maxRedirects = 10
-	visited := make(map[string]bool)
-	currentURL := urlStr
-
 	// Use the provided custom client if available, otherwise create a dedicated client
 	var client *http.Client
 	if customClient != nil {
@@ -370,42 +365,32 @@ func resolveOriginURL(ctx context.Context, customClient *http.Client, urlStr str
 		}
 	}
 
-	for range maxRedirects {
-		if visited[currentURL] {
-			return "", errors.Newf("detected a redirect loop at %s", currentURL)
-		}
-		visited[currentURL] = true
-
-		req, err := http.NewRequestWithContext(ctx, "HEAD", currentURL, nil)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to create request for %s", currentURL)
-		}
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return "", errors.Wrapf(err, "failed to send HEAD request to %s", currentURL)
-		}
-		defer resp.Body.Close()
-
-		// If it's a redirect status code...
-		if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
-			location, err := resp.Location()
-			if err != nil {
-				if err == http.ErrNoLocation {
-					// It's a 3xx status but no Location header. This is unusual.
-					// We'll treat the current URL as the final one.
-					return currentURL, nil
-				}
-				return "", errors.Wrapf(err, "failed to get location header from %s", currentURL)
-			}
-			currentURL = location.String()
-		} else {
-			// Not a redirect, so we've found the final destination.
-			return currentURL, nil
-		}
+	req, err := http.NewRequestWithContext(ctx, "HEAD", urlStr, nil)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to create request for %s", urlStr)
 	}
 
-	return "", errors.Newf("exceeded max redirects (%d) starting from %s", maxRedirects, urlStr)
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to send HEAD request to %s", urlStr)
+	}
+	defer resp.Body.Close()
+
+	// If it's a redirect status code, return the redirect destination
+	if resp.StatusCode >= 300 && resp.StatusCode <= 399 {
+		location, err := resp.Location()
+		if err != nil {
+			if err == http.ErrNoLocation {
+				// It's a 3xx status but no Location header. Return the original URL.
+				return urlStr, nil
+			}
+			return "", errors.Wrapf(err, "failed to get location header from %s", urlStr)
+		}
+		return location.String(), nil
+	}
+
+	// Not a redirect, return the original URL
+	return urlStr, nil
 }
 
 // urlResolveJob represents a job for URL resolution
