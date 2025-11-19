@@ -67,7 +67,7 @@ func main() {
 
 	// Initialize the client.
 	client, err := search.NewClient(ctx, apiKey,
-		search.WithModelName("gemini-3.0-flash"),
+		search.WithModelName("gemini-3-pro-preview"),
 		search.WithNoRedirection(),
 	)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const defaultModel = "gemini-3.0-flash"
+const defaultModel = "gemini-3-pro-preview"
 
 func main() {
 	cmd := &cli.Command{
@@ -46,6 +46,9 @@ func main() {
 			model := cmd.String("model")
 			if model == "" {
 				model = os.Getenv("GEMINI_MODEL_ID")
+			}
+			if model == "" {
+				model = defaultModel
 			}
 
 			query := cmd.Args().First()

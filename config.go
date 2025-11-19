@@ -11,7 +11,7 @@ type ClientConfig struct {
 	// This field is mandatory.
 	APIKey string
 
-	// ModelName is the default Gemini model to be used for requests (e.g., "gemini-3.0-flash").
+	// ModelName is the default Gemini model to be used for requests (e.g., "gemini-3-pro-preview").
 	// Can be overridden per request via GenerationParams.
 	ModelName string
 
