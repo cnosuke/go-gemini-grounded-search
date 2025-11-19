@@ -17,7 +17,7 @@ const (
 const (
 	// DefaultModelName is the default Gemini model used if not specified by the user.
 	// Gemini flash serieses are chosen for its balance of speed and capability for grounded search.
-	DefaultModelName = "gemini-2.5-flash"
+	DefaultModelName = "gemini-3.0-flash"
 
 	// DefaultTemperature for grounded search tasks.
 	// 0.0f is generally recommended for factuality and to minimize hallucinations.
