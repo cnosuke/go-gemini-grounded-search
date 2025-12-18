@@ -48,7 +48,7 @@ type Client struct {
 	config                  ClientConfig                 // Resolved configuration after applying options
 	genaiClient             *genai.Client                // Underlying client from the official Google AI Go SDK
 	httpClient              *http.Client                 // HTTP client for non-API requests like redirection resolving
-	defaultModel            string                       // Default model name (e.g., "gemini-3-pro-preview")
+	defaultModel            string                       // Default model name (e.g., "gemini-3-flash-preview")
 	defaultGenContentConfig *genai.GenerateContentConfig // Default generation configuration
 	userAgent               string                       // Combined user-agent string
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const defaultModel = "gemini-3-pro-preview"
+const defaultModel = "gemini-3-flash-preview"
 
 func main() {
 	cmd := &cli.Command{
