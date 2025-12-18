@@ -30,13 +30,14 @@ package search
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/cockroachdb/errors"
+	ierrors "github.com/cnosuke/go-gemini-grounded-search/internal/errors"
 	"google.golang.org/genai"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -48,7 +49,7 @@ type Client struct {
 	config                  ClientConfig                 // Resolved configuration after applying options
 	genaiClient             *genai.Client                // Underlying client from the official Google AI Go SDK
 	httpClient              *http.Client                 // HTTP client for non-API requests like redirection resolving
-	defaultModel            string                       // Default model name (e.g., "gemini-3-pro-preview")
+	defaultModel            string                       // Default model name (e.g., "gemini-3-flash-preview")
 	defaultGenContentConfig *genai.GenerateContentConfig // Default generation configuration
 	userAgent               string                       // Combined user-agent string
 }
@@ -183,7 +184,7 @@ func (c *Client) processGenaiResponse(ctx context.Context, genaiResp *genai.Gene
 
 	grounding, err := extractGroundingMetadata(candidate.GroundingMetadata)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to extract grounding metadata")
+		return nil, ierrors.Wrapf(err, "failed to extract grounding metadata")
 	}
 
 	// If redirection is disabled, resolve the original URL.
@@ -233,7 +234,7 @@ func (c *Client) ListAvailableModels(ctx context.Context) ([]string, error) {
 	var models []string
 	for m, err := range c.genaiClient.Models.All(ctx) {
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to list models")
+			return nil, ierrors.Wrapf(err, "failed to list models")
 		}
 		if m == nil {
 			continue
@@ -251,7 +252,7 @@ func (c *Client) ListAvailableModels(ctx context.Context) ([]string, error) {
 // GenerateGroundedContent sends a query to the Gemini API using client's default model settings.
 func (c *Client) GenerateGroundedContent(ctx context.Context, query string) (*Response, error) {
 	if query == "" {
-		return nil, errors.Wrapf(ErrInvalidParameter, "query cannot be empty")
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "query cannot be empty")
 	}
 
 	params := &GenerationParams{
@@ -264,10 +265,10 @@ func (c *Client) GenerateGroundedContent(ctx context.Context, query string) (*Re
 // GenerateGroundedContentWithParams sends a query to the Gemini API with per-request parameters.
 func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *GenerationParams) (*Response, error) {
 	if params == nil {
-		return nil, errors.Wrapf(ErrInvalidParameter, "generation parameters cannot be nil")
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "generation parameters cannot be nil")
 	}
 	if params.Prompt == "" {
-		return nil, errors.Wrapf(ErrInvalidParameter, "prompt within generation parameters cannot be empty")
+		return nil, ierrors.Wrapf(ErrInvalidParameter, "prompt within generation parameters cannot be empty")
 	}
 
 	modelName := c.config.ModelName
@@ -367,12 +368,12 @@ func resolveOriginURL(ctx context.Context, customClient *http.Client, urlStr str
 
 	req, err := http.NewRequestWithContext(ctx, "HEAD", urlStr, nil)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to create request for %s", urlStr)
+		return "", ierrors.Wrapf(err, "failed to create request for %s", urlStr)
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to send HEAD request to %s", urlStr)
+		return "", ierrors.Wrapf(err, "failed to send HEAD request to %s", urlStr)
 	}
 	defer resp.Body.Close()
 
@@ -384,7 +385,7 @@ func resolveOriginURL(ctx context.Context, customClient *http.Client, urlStr str
 				// It's a 3xx status but no Location header. Return the original URL.
 				return urlStr, nil
 			}
-			return "", errors.Wrapf(err, "failed to get location header from %s", urlStr)
+			return "", ierrors.Wrapf(err, "failed to get location header from %s", urlStr)
 		}
 		return location.String(), nil
 	}
