@@ -39,7 +39,9 @@ type ClientConfig struct {
 	DefaultSafetySettings []*SafetySetting
 
 	// DefaultThinkingConfig controls the Gemini model's thinking behavior.
-	// If nil, the model's default thinking behavior is used.
+	// If nil (default), the model's built-in thinking behavior is used as-is.
+	// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
+	// which may add latency. For grounded search, setting ThinkingBudget to 0 is recommended.
 	DefaultThinkingConfig *ThinkingConfig
 
 	// HTTPClient allows providing a custom *http.Client for making API requests.

@@ -44,11 +44,16 @@ type SafetySetting struct {
 }
 
 // ThinkingConfig controls the Gemini model's thinking behavior.
+//
+// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
+// which may add latency. To disable thinking, set ThinkingBudget to 0.
+// When this config is nil (the default), the model's built-in thinking behavior is used as-is.
 type ThinkingConfig struct {
 	// IncludeThoughts indicates whether to include thoughts in the response.
+	// If true, thoughts are returned only if the model supports it and thoughts are available.
 	IncludeThoughts bool `json:"include_thoughts,omitempty"`
 	// ThinkingBudget indicates the thinking budget in tokens.
-	// If nil, the model's default budget is used.
+	// Set to 0 to disable thinking. If nil, the model's default budget is used.
 	ThinkingBudget *int32 `json:"thinking_budget,omitempty"`
 }
 
