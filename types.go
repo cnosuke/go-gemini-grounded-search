@@ -43,6 +43,34 @@ type SafetySetting struct {
 	Threshold HarmBlockThreshold `json:"threshold"`
 }
 
+// ThinkingConfig controls the Gemini model's thinking behavior.
+//
+// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
+// which may add latency. To disable thinking, set ThinkingBudget to 0.
+// When this config is nil (the default), the model's built-in thinking behavior is used as-is.
+type ThinkingConfig struct {
+	// IncludeThoughts indicates whether to include thoughts in the response.
+	// If true, thoughts are returned only if the model supports it and thoughts are available.
+	IncludeThoughts bool `json:"include_thoughts,omitempty"`
+	// ThinkingBudget indicates the thinking budget in tokens.
+	// Set to 0 to disable thinking. If nil, the model's default budget is used.
+	ThinkingBudget *int32 `json:"thinking_budget,omitempty"`
+}
+
+func (tc *ThinkingConfig) toSDK() *genai.ThinkingConfig {
+	if tc == nil {
+		return nil
+	}
+	sdkConfig := &genai.ThinkingConfig{
+		IncludeThoughts: tc.IncludeThoughts,
+	}
+	if tc.ThinkingBudget != nil {
+		budget := *tc.ThinkingBudget
+		sdkConfig.ThinkingBudget = &budget
+	}
+	return sdkConfig
+}
+
 // --- Grounding and Response Types ---
 
 // GroundingAttribution represents a source that the Gemini model used
@@ -152,4 +180,7 @@ type GenerationParams struct {
 	// []*genai.SafetySetting (SDK-level, using SDK enum types for Category and Threshold)
 	// before being used in genai.GenerationConfig.SafetySettings.
 	SafetySettings []*SafetySetting `json:"safety_settings,omitempty"`
+
+	// ThinkingConfig overrides the client-level thinking configuration for this request.
+	ThinkingConfig *ThinkingConfig `json:"thinking_config,omitempty"`
 }

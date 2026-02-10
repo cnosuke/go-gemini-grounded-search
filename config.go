@@ -38,6 +38,12 @@ type ClientConfig struct {
 	// If nil or empty, the underlying SDK/API defaults will apply.
 	DefaultSafetySettings []*SafetySetting
 
+	// DefaultThinkingConfig controls the Gemini model's thinking behavior.
+	// If nil (default), the model's built-in thinking behavior is used as-is.
+	// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
+	// which may add latency. For grounded search, setting ThinkingBudget to 0 is recommended.
+	DefaultThinkingConfig *ThinkingConfig
+
 	// HTTPClient allows providing a custom *http.Client for making API requests.
 	// If nil, the underlying genai SDK will use its default HTTP client.
 	HTTPClient *http.Client

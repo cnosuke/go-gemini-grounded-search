@@ -90,6 +90,25 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 	}
 }
 
+// WithDefaultThinkingConfig sets the default thinking configuration for the client.
+// This controls the model's thinking behavior (e.g., thinking budget).
+// If nil is passed, the model's built-in thinking behavior is used as-is.
+//
+// Some models (e.g., gemini-3-flash-preview) have thinking enabled by default.
+// To disable thinking and reduce latency:
+//
+//	budget := int32(0)
+//	search.WithDefaultThinkingConfig(&search.ThinkingConfig{ThinkingBudget: &budget})
+func WithDefaultThinkingConfig(tc *ThinkingConfig) ClientOption {
+	return func(cfg *ClientConfig) error {
+		if tc != nil && tc.ThinkingBudget != nil && *tc.ThinkingBudget < 0 {
+			return ierrors.Wrapf(ErrInvalidParameter, "thinking budget must be non-negative, got %d", *tc.ThinkingBudget)
+		}
+		cfg.DefaultThinkingConfig = tc
+		return nil
+	}
+}
+
 // WithHTTPClient sets a custom HTTP client to be used for API requests.
 func WithHTTPClient(client *http.Client) ClientOption {
 	return func(cfg *ClientConfig) error {

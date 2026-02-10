@@ -258,6 +258,7 @@ The library supports several configuration options through the functional option
 - `WithDefaultTopK(k int32)`: Sets the default TopK sampling parameter.
 - `WithDefaultTopP(p float32)`: Sets the default TopP (nucleus) sampling parameter.
 - `WithDefaultSafetySettings(settings []*SafetySetting)`: Sets default safety settings.
+- `WithDefaultThinkingConfig(tc *ThinkingConfig)`: Controls the model's thinking behavior. Some models (e.g., `gemini-3-flash-preview`) have thinking enabled by default, which adds latency. Set `ThinkingBudget` to `0` to disable thinking.
 - `WithHTTPClient(client *http.Client)`: Provides a custom HTTP client.
 - `WithRequestTimeout(timeout time.Duration)`: Sets a default timeout for API requests.
 - `WithGoogleSearchToolDisabled(disabled bool)`: Allows disabling the Google Search Tool globally for the client.
