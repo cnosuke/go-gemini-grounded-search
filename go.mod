@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/urfave/cli/v3 v3.3.3
 	google.golang.org/api v0.197.0
-	google.golang.org/genai v1.4.0
+	google.golang.org/genai v1.46.0
 	google.golang.org/grpc v1.66.2
 )
 

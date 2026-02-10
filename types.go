@@ -43,10 +43,24 @@ type SafetySetting struct {
 	Threshold HarmBlockThreshold `json:"threshold"`
 }
 
+// ThinkingLevel controls the level of thinking the model should perform.
+// Recommended for Gemini 3 series models.
+type ThinkingLevel string
+
+// Constants for ThinkingLevel
+const (
+	ThinkingLevelUnspecified ThinkingLevel = "THINKING_LEVEL_UNSPECIFIED"
+	ThinkingLevelLow         ThinkingLevel = "LOW"
+	ThinkingLevelMedium      ThinkingLevel = "MEDIUM"
+	ThinkingLevelHigh        ThinkingLevel = "HIGH"
+	ThinkingLevelMinimal     ThinkingLevel = "MINIMAL"
+)
+
 // ThinkingConfig controls the Gemini model's thinking behavior.
 //
-// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
-// which may add latency. To disable thinking, set ThinkingBudget to 0.
+// For Gemini 3 series models (e.g., gemini-3-flash-preview), use ThinkingLevel
+// (ThinkingLevelMinimal, ThinkingLevelLow, ThinkingLevelMedium, ThinkingLevelHigh).
+// For Gemini 2.5 series models, use ThinkingBudget (numeric token count).
 // When this config is nil (the default), the model's built-in thinking behavior is used as-is.
 type ThinkingConfig struct {
 	// IncludeThoughts indicates whether to include thoughts in the response.
@@ -54,7 +68,11 @@ type ThinkingConfig struct {
 	IncludeThoughts bool `json:"include_thoughts,omitempty"`
 	// ThinkingBudget indicates the thinking budget in tokens.
 	// Set to 0 to disable thinking. If nil, the model's default budget is used.
+	// Recommended for Gemini 2.5 series models.
 	ThinkingBudget *int32 `json:"thinking_budget,omitempty"`
+	// ThinkingLevel controls the level of thinking the model should perform.
+	// Recommended for Gemini 3 series models.
+	ThinkingLevel ThinkingLevel `json:"thinking_level,omitempty"`
 }
 
 func (tc *ThinkingConfig) toSDK() *genai.ThinkingConfig {
@@ -67,6 +85,9 @@ func (tc *ThinkingConfig) toSDK() *genai.ThinkingConfig {
 	if tc.ThinkingBudget != nil {
 		budget := *tc.ThinkingBudget
 		sdkConfig.ThinkingBudget = &budget
+	}
+	if tc.ThinkingLevel != "" {
+		sdkConfig.ThinkingLevel = genai.ThinkingLevel(tc.ThinkingLevel)
 	}
 	return sdkConfig
 }
