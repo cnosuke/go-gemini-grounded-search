@@ -3,6 +3,8 @@ package search
 import (
 	"net/http"
 	"time"
+
+	"google.golang.org/genai"
 )
 
 // ClientConfig holds the configuration for the Gemini API client.
@@ -37,6 +39,10 @@ type ClientConfig struct {
 	// These can be overridden per request via GenerationParams.
 	// If nil or empty, the underlying SDK/API defaults will apply.
 	DefaultSafetySettings []*SafetySetting
+
+	// DefaultThinkingConfig controls the Gemini model's thinking behavior.
+	// If nil, the model's default thinking behavior is used.
+	DefaultThinkingConfig *genai.ThinkingConfig
 
 	// HTTPClient allows providing a custom *http.Client for making API requests.
 	// If nil, the underlying genai SDK will use its default HTTP client.

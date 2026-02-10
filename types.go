@@ -152,4 +152,7 @@ type GenerationParams struct {
 	// []*genai.SafetySetting (SDK-level, using SDK enum types for Category and Threshold)
 	// before being used in genai.GenerationConfig.SafetySettings.
 	SafetySettings []*SafetySetting `json:"safety_settings,omitempty"`
+
+	// ThinkingConfig overrides the client-level thinking configuration for this request.
+	ThinkingConfig *genai.ThinkingConfig `json:"thinking_config,omitempty"`
 }
