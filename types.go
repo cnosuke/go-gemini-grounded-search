@@ -58,10 +58,17 @@ type ThinkingConfig struct {
 }
 
 func (tc *ThinkingConfig) toSDK() *genai.ThinkingConfig {
-	return &genai.ThinkingConfig{
-		IncludeThoughts: tc.IncludeThoughts,
-		ThinkingBudget:  tc.ThinkingBudget,
+	if tc == nil {
+		return nil
 	}
+	sdkConfig := &genai.ThinkingConfig{
+		IncludeThoughts: tc.IncludeThoughts,
+	}
+	if tc.ThinkingBudget != nil {
+		budget := *tc.ThinkingBudget
+		sdkConfig.ThinkingBudget = &budget
+	}
+	return sdkConfig
 }
 
 // --- Grounding and Response Types ---
