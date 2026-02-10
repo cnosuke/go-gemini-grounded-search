@@ -5,7 +5,6 @@ import (
 	"time"
 
 	ierrors "github.com/cnosuke/go-gemini-grounded-search/internal/errors"
-	"google.golang.org/genai"
 )
 
 // ClientOption is a function type used to apply configuration options to a ClientConfig.
@@ -94,7 +93,7 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 // WithDefaultThinkingConfig sets the default thinking configuration for the client.
 // This controls the model's thinking behavior (e.g., thinking budget).
 // If nil is passed, the model's default thinking behavior is used.
-func WithDefaultThinkingConfig(tc *genai.ThinkingConfig) ClientOption {
+func WithDefaultThinkingConfig(tc *ThinkingConfig) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if tc != nil && tc.ThinkingBudget != nil && *tc.ThinkingBudget < 0 {
 			return ierrors.Wrapf(ErrInvalidParameter, "thinking budget must be non-negative, got %d", *tc.ThinkingBudget)

@@ -114,7 +114,7 @@ func NewClient(ctx context.Context, apiKey string, opts ...ClientOption) (*Clien
 	}
 
 	if cfg.DefaultThinkingConfig != nil {
-		gConf.ThinkingConfig = cfg.DefaultThinkingConfig
+		gConf.ThinkingConfig = cfg.DefaultThinkingConfig.toSDK()
 	}
 
 	if cfg.DisableGoogleSearchToolGlobally {
@@ -328,7 +328,7 @@ func (c *Client) GenerateGroundedContentWithParams(ctx context.Context, params *
 	}
 
 	if params.ThinkingConfig != nil {
-		currentConfig.ThinkingConfig = params.ThinkingConfig
+		currentConfig.ThinkingConfig = params.ThinkingConfig.toSDK()
 	}
 
 	contents := []*genai.Content{
