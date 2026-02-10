@@ -95,7 +95,10 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 // If nil is passed, the model's built-in thinking behavior is used as-is.
 //
 // Some models (e.g., gemini-3-flash-preview) have thinking enabled by default.
-// To disable thinking and reduce latency, pass &ThinkingConfig{ThinkingBudget: ptr(int32(0))}.
+// To disable thinking and reduce latency:
+//
+//	budget := int32(0)
+//	search.WithDefaultThinkingConfig(&search.ThinkingConfig{ThinkingBudget: &budget})
 func WithDefaultThinkingConfig(tc *ThinkingConfig) ClientOption {
 	return func(cfg *ClientConfig) error {
 		if tc != nil && tc.ThinkingBudget != nil && *tc.ThinkingBudget < 0 {
