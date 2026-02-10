@@ -40,8 +40,8 @@ type ClientConfig struct {
 
 	// DefaultThinkingConfig controls the Gemini model's thinking behavior.
 	// If nil (default), the model's built-in thinking behavior is used as-is.
-	// Note: Some models (e.g., gemini-3-flash-preview) have thinking enabled by default,
-	// which may add latency. For grounded search, setting ThinkingBudget to 0 is recommended.
+	// For Gemini 3 series models, use ThinkingLevel (e.g., ThinkingLevelLow).
+	// For Gemini 2.5 series models, use ThinkingBudget (set to 0 to disable thinking).
 	DefaultThinkingConfig *ThinkingConfig
 
 	// HTTPClient allows providing a custom *http.Client for making API requests.

@@ -91,11 +91,15 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 }
 
 // WithDefaultThinkingConfig sets the default thinking configuration for the client.
-// This controls the model's thinking behavior (e.g., thinking budget).
 // If nil is passed, the model's built-in thinking behavior is used as-is.
 //
-// Some models (e.g., gemini-3-flash-preview) have thinking enabled by default.
-// To disable thinking and reduce latency:
+// For Gemini 3 series models (e.g., gemini-3-flash-preview), use ThinkingLevel:
+//
+//	search.WithDefaultThinkingConfig(&search.ThinkingConfig{
+//		ThinkingLevel: search.ThinkingLevelLow,
+//	})
+//
+// For Gemini 2.5 series models, use ThinkingBudget:
 //
 //	budget := int32(0)
 //	search.WithDefaultThinkingConfig(&search.ThinkingConfig{ThinkingBudget: &budget})
