@@ -16,7 +16,8 @@ const (
 // Default configuration values for the client.
 const (
 	// DefaultModelName is the default Gemini model used if not specified by the user.
-	// Gemini flash serieses are chosen for its balance of speed and capability for grounded search.
+	// Gemini Flash is chosen for its balance of speed and cost for grounded search.
+	// For higher reasoning quality, consider using "gemini-3.1-pro-preview" via WithModelName.
 	DefaultModelName = "gemini-3-flash-preview"
 
 	// DefaultTemperature for grounded search tasks.

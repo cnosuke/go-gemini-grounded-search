@@ -47,7 +47,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "thinking-level",
 				Aliases: []string{"t"},
-				Usage:   "Thinking level for the model (minimal, low, medium, high). Only for Gemini 3 series models.",
+				Usage:   "Thinking level for the model (minimal, low, medium, high). For Gemini 3/3.1 series models (e.g., gemini-3-flash-preview, gemini-3.1-pro-preview).",
 			},
 			&cli.BoolFlag{
 				Name:    "verbose",

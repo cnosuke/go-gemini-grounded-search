@@ -60,8 +60,9 @@ func main() {
 	ctx := context.Background()
 
 	// Create a new client with your API key
-	// By default, it will use a model like "gemini-3-flash-preview" (see constants.go)
-	// and enable Google Search Tool.
+	// By default, it will use "gemini-3-flash-preview" (see constants.go).
+	// For higher reasoning quality, use WithModelName("gemini-3.1-pro-preview").
+	// Google Search Tool is enabled by default.
 	client, err := search.NewClient(ctx, apiKey)
 	if err != nil {
 		log.Fatalf("Failed to create client: %v", err)
@@ -134,7 +135,7 @@ func main() {
 	client, err := search.NewClient(
 		ctx,
 		apiKey,
-		search.WithModelName("gemini-3-flash-preview"),           // Use a specific model (see options.go)
+		search.WithModelName("gemini-3.1-pro-preview"),            // Use Gemini 3.1 Pro for higher reasoning quality
 		search.WithDefaultTemperature(temperatureValue),        // Adjust temperature (see options.go)
 		search.WithDefaultMaxOutputTokens(maxTokensValue),      // Adjust max output tokens
 		search.WithRequestTimeout(90*time.Second),              // Set a request timeout
@@ -177,7 +178,7 @@ var temp float32 = 0.2
 client, err := search.NewClient(
     ctx,
     "your-api-key",
-    search.WithModelName("gemini-3-flash-preview"),
+    search.WithModelName("gemini-3.1-pro-preview"), // or "gemini-3-flash-preview" for faster/cheaper
     search.WithDefaultTemperature(temp),
 )
 ```
@@ -252,13 +253,13 @@ The helper functions in `errors.go` (e.g., `IsAPIError`, `IsContentBlockedError`
 
 The library supports several configuration options through the functional options pattern passed to `NewClient` (see `options.go` for all available options):
 
-- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-3-flash-preview"`).
+- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-3-flash-preview"` or `"gemini-3.1-pro-preview"`).
 - `WithDefaultTemperature(temp float32)`: Sets the default generation temperature (0.0 for more factual, higher for more creative).
 - `WithDefaultMaxOutputTokens(tokens int32)`: Sets the default maximum number of tokens to generate.
 - `WithDefaultTopK(k int32)`: Sets the default TopK sampling parameter.
 - `WithDefaultTopP(p float32)`: Sets the default TopP (nucleus) sampling parameter.
 - `WithDefaultSafetySettings(settings []*SafetySetting)`: Sets default safety settings.
-- `WithDefaultThinkingConfig(tc *ThinkingConfig)`: Controls the model's thinking behavior. For Gemini 3 series models, use `ThinkingLevel` (`ThinkingLevelMinimal`, `ThinkingLevelLow`, `ThinkingLevelMedium`, `ThinkingLevelHigh`). For Gemini 2.5 series models, use `ThinkingBudget` (set to `0` to disable thinking).
+- `WithDefaultThinkingConfig(tc *ThinkingConfig)`: Controls the model's thinking behavior. For Gemini 3/3.1 series models, use `ThinkingLevel` (`ThinkingLevelMinimal`, `ThinkingLevelLow`, `ThinkingLevelMedium`, `ThinkingLevelHigh`). For Gemini 2.5 series models, use `ThinkingBudget` (set to `0` to disable thinking).
 - `WithHTTPClient(client *http.Client)`: Provides a custom HTTP client.
 - `WithRequestTimeout(timeout time.Duration)`: Sets a default timeout for API requests.
 - `WithGoogleSearchToolDisabled(disabled bool)`: Allows disabling the Google Search Tool globally for the client.
