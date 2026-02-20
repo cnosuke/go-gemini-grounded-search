@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	search "github.com/cnosuke/go-gemini-grounded-search"
@@ -12,6 +13,21 @@ import (
 )
 
 const defaultModel = "gemini-3-flash-preview"
+
+func parseThinkingLevel(s string) (search.ThinkingLevel, error) {
+	switch strings.ToUpper(s) {
+	case "MINIMAL":
+		return search.ThinkingLevelMinimal, nil
+	case "LOW":
+		return search.ThinkingLevelLow, nil
+	case "MEDIUM":
+		return search.ThinkingLevelMedium, nil
+	case "HIGH":
+		return search.ThinkingLevelHigh, nil
+	default:
+		return "", fmt.Errorf("invalid thinking level %q: must be one of minimal, low, medium, high", s)
+	}
+}
 
 func main() {
 	cmd := &cli.Command{
@@ -27,6 +43,11 @@ func main() {
 				Name:    "model",
 				Aliases: []string{"m"},
 				Usage:   "Gemini model to use. Can also be set with the GEMINI_MODEL_ID environment variable.",
+			},
+			&cli.StringFlag{
+				Name:    "thinking-level",
+				Aliases: []string{"t"},
+				Usage:   "Thinking level for the model (minimal, low, medium, high). Only for Gemini 3 series models.",
 			},
 			&cli.BoolFlag{
 				Name:    "verbose",
@@ -62,6 +83,16 @@ func main() {
 				clientOpts = append(clientOpts, search.WithModelName(model))
 			}
 
+			if tl := cmd.String("thinking-level"); tl != "" {
+				level, err := parseThinkingLevel(tl)
+				if err != nil {
+					return cli.Exit(err.Error(), 1)
+				}
+				clientOpts = append(clientOpts, search.WithDefaultThinkingConfig(&search.ThinkingConfig{
+					ThinkingLevel: level,
+				}))
+			}
+
 			client, err := search.NewClient(ctx, apiKey, clientOpts...)
 			if err != nil {
 				return cli.Exit(fmt.Sprintf("Failed to create client: %v", err), 1)
@@ -72,6 +103,9 @@ func main() {
 				log.Printf("API Key: %s****%s", apiKey[:4], apiKey[len(apiKey)-4:])
 				log.Printf("Using model: %s", model)
 				log.Printf("Search query: %s", query)
+				if tl := cmd.String("thinking-level"); tl != "" {
+					log.Printf("Thinking level: %s", strings.ToUpper(tl))
+				}
 			}
 
 			resp, err := client.GenerateGroundedContent(ctx, query)
