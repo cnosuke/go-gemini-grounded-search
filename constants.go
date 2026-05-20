@@ -10,7 +10,7 @@ const (
 
 	// LibraryVersion is the current version of this library.
 	// Follow semantic versioning (https://semver.org/).
-	LibraryVersion = "0.1.0"
+	LibraryVersion = "2.1.0"
 )
 
 // Default configuration values for the client.
