@@ -93,7 +93,7 @@ func WithDefaultSafetySettings(settings []*SafetySetting) ClientOption {
 // WithDefaultThinkingConfig sets the default thinking configuration for the client.
 // If nil is passed, the model's built-in thinking behavior is used as-is.
 //
-// For Gemini 3/3.1 series models (e.g., gemini-3-flash-preview, gemini-3.1-pro-preview),
+// For Gemini 3/3.1/3.5 series models (e.g., gemini-3.5-flash, gemini-3.1-pro-preview, gemini-3-flash-preview),
 // use ThinkingLevel:
 //
 //	search.WithDefaultThinkingConfig(&search.ThinkingConfig{

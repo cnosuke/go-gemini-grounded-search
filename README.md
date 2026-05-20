@@ -60,7 +60,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create a new client with your API key
-	// By default, it will use "gemini-3-flash-preview" (see constants.go).
+	// By default, it will use "gemini-3.5-flash" (see constants.go).
 	// For higher reasoning quality, use WithModelName("gemini-3.1-pro-preview").
 	// Google Search Tool is enabled by default.
 	client, err := search.NewClient(ctx, apiKey)
@@ -178,7 +178,7 @@ var temp float32 = 0.2
 client, err := search.NewClient(
     ctx,
     "your-api-key",
-    search.WithModelName("gemini-3.1-pro-preview"), // or "gemini-3-flash-preview" for faster/cheaper
+    search.WithModelName("gemini-3.1-pro-preview"), // or "gemini-3.5-flash" for faster/cheaper
     search.WithDefaultTemperature(temp),
 )
 ```
@@ -253,13 +253,13 @@ The helper functions in `errors.go` (e.g., `IsAPIError`, `IsContentBlockedError`
 
 The library supports several configuration options through the functional options pattern passed to `NewClient` (see `options.go` for all available options):
 
-- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-3-flash-preview"` or `"gemini-3.1-pro-preview"`).
+- `WithModelName(name string)`: Specifies which Gemini model to use (e.g., `"gemini-3.5-flash"` or `"gemini-3.1-pro-preview"`).
 - `WithDefaultTemperature(temp float32)`: Sets the default generation temperature (0.0 for more factual, higher for more creative).
 - `WithDefaultMaxOutputTokens(tokens int32)`: Sets the default maximum number of tokens to generate.
 - `WithDefaultTopK(k int32)`: Sets the default TopK sampling parameter.
 - `WithDefaultTopP(p float32)`: Sets the default TopP (nucleus) sampling parameter.
 - `WithDefaultSafetySettings(settings []*SafetySetting)`: Sets default safety settings.
-- `WithDefaultThinkingConfig(tc *ThinkingConfig)`: Controls the model's thinking behavior. For Gemini 3/3.1 series models, use `ThinkingLevel` (`ThinkingLevelMinimal`, `ThinkingLevelLow`, `ThinkingLevelMedium`, `ThinkingLevelHigh`). For Gemini 2.5 series models, use `ThinkingBudget` (set to `0` to disable thinking).
+- `WithDefaultThinkingConfig(tc *ThinkingConfig)`: Controls the model's thinking behavior. For Gemini 3/3.1/3.5 series models, use `ThinkingLevel` (`ThinkingLevelMinimal`, `ThinkingLevelLow`, `ThinkingLevelMedium`, `ThinkingLevelHigh`). For Gemini 2.5 series models, use `ThinkingBudget` (set to `0` to disable thinking).
 - `WithHTTPClient(client *http.Client)`: Provides a custom HTTP client.
 - `WithRequestTimeout(timeout time.Duration)`: Sets a default timeout for API requests.
 - `WithGoogleSearchToolDisabled(disabled bool)`: Allows disabling the Google Search Tool globally for the client.

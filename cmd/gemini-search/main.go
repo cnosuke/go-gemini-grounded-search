@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-const defaultModel = "gemini-3-flash-preview"
+const defaultModel = "gemini-3.5-flash"
 
 func parseThinkingLevel(s string) (search.ThinkingLevel, error) {
 	switch strings.ToUpper(s) {
@@ -47,7 +47,7 @@ func main() {
 			&cli.StringFlag{
 				Name:    "thinking-level",
 				Aliases: []string{"t"},
-				Usage:   "Thinking level for the model (minimal, low, medium, high). For Gemini 3/3.1 series models (e.g., gemini-3-flash-preview, gemini-3.1-pro-preview).",
+				Usage:   "Thinking level for the model (minimal, low, medium, high). For Gemini 3/3.1/3.5 series models (e.g., gemini-3.5-flash, gemini-3.1-pro-preview, gemini-3-flash-preview).",
 			},
 			&cli.BoolFlag{
 				Name:    "verbose",
