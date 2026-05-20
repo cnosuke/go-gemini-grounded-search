@@ -58,7 +58,7 @@ const (
 
 // ThinkingConfig controls the Gemini model's thinking behavior.
 //
-// For Gemini 3/3.1 series models (e.g., gemini-3-flash-preview, gemini-3.1-pro-preview),
+// For Gemini 3/3.1/3.5 series models (e.g., gemini-3.5-flash, gemini-3.1-pro-preview, gemini-3-flash-preview),
 // use ThinkingLevel (ThinkingLevelMinimal, ThinkingLevelLow, ThinkingLevelMedium, ThinkingLevelHigh).
 // For Gemini 2.5 series models, use ThinkingBudget (numeric token count).
 // When this config is nil (the default), the model's built-in thinking behavior is used as-is.
@@ -71,7 +71,7 @@ type ThinkingConfig struct {
 	// Recommended for Gemini 2.5 series models.
 	ThinkingBudget *int32 `json:"thinking_budget,omitempty"`
 	// ThinkingLevel controls the level of thinking the model should perform.
-	// Recommended for Gemini 3/3.1 series models.
+	// Recommended for Gemini 3/3.1/3.5 series models.
 	ThinkingLevel ThinkingLevel `json:"thinking_level,omitempty"`
 }
 
