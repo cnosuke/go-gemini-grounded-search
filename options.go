@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	ierrors "github.com/cnosuke/go-gemini-grounded-search/internal/errors"
+	ierrors "github.com/cnosuke/go-gemini-grounded-search/v2/internal/errors"
 )
 
 // ClientOption is a function type used to apply configuration options to a ClientConfig.

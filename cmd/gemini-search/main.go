@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	search "github.com/cnosuke/go-gemini-grounded-search"
+	search "github.com/cnosuke/go-gemini-grounded-search/v2"
 	"github.com/urfave/cli/v3"
 )
 

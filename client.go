@@ -37,7 +37,7 @@ import (
 	"strings"
 	"time"
 
-	ierrors "github.com/cnosuke/go-gemini-grounded-search/internal/errors"
+	ierrors "github.com/cnosuke/go-gemini-grounded-search/v2/internal/errors"
 	"google.golang.org/genai"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

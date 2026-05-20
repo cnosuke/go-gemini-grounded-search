@@ -1,6 +1,6 @@
 # go-gemini-grounded-search
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/cnosuke/go-gemini-grounded-search.svg)](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search)
+[![Go Reference](https://pkg.go.dev/badge/github.com/cnosuke/go-gemini-grounded-search/v2.svg)](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search/v2)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cnosuke/go-gemini-grounded-search)](https://goreportcard.com/report/github.com/cnosuke/go-gemini-grounded-search)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -23,7 +23,7 @@ A Go client library for Google's Gemini API, focusing on leveraging its Google S
 ## Installation
 
 ```bash
-go get github.com/cnosuke/go-gemini-grounded-search
+go get github.com/cnosuke/go-gemini-grounded-search/v2
 ```
 
 ### CLI
@@ -33,7 +33,7 @@ go get github.com/cnosuke/go-gemini-grounded-search
 make install        # installs gemini-search to $GOBIN
 
 # or directly
-go install github.com/cnosuke/go-gemini-grounded-search/cmd/gemini-search@latest
+go install github.com/cnosuke/go-gemini-grounded-search/v2/cmd/gemini-search@latest
 ```
 
 ## Quick Start
@@ -47,7 +47,7 @@ import (
 	"log"
 	"os"
 
-	search "github.com/cnosuke/go-gemini-grounded-search"
+	search "github.com/cnosuke/go-gemini-grounded-search/v2"
 )
 
 func main() {
@@ -114,7 +114,7 @@ import (
 	"os"
 	"time"
 
-	search "github.com/cnosuke/go-gemini-grounded-search"
+	search "github.com/cnosuke/go-gemini-grounded-search/v2"
 )
 
 func main() {
@@ -163,7 +163,7 @@ func main() {
 
 ## API Reference
 
-For detailed API documentation, see the [Go Reference](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search).
+For detailed API documentation, see the [Go Reference](https://pkg.go.dev/github.com/cnosuke/go-gemini-grounded-search/v2).
 
 ### Client
 

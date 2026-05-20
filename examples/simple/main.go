@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	search "github.com/cnosuke/go-gemini-grounded-search"
+	search "github.com/cnosuke/go-gemini-grounded-search/v2"
 )
 
 func buildQuery(s string) string {

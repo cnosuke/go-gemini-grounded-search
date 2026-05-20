@@ -1,4 +1,4 @@
-module github.com/cnosuke/go-gemini-grounded-search
+module github.com/cnosuke/go-gemini-grounded-search/v2
 
 go 1.24.0
 
