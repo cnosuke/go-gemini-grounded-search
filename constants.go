@@ -10,15 +10,15 @@ const (
 
 	// LibraryVersion is the current version of this library.
 	// Follow semantic versioning (https://semver.org/).
-	LibraryVersion = "1.5.0"
+	LibraryVersion = "1.6.0"
 )
 
 // Default configuration values for the client.
 const (
 	// DefaultModelName is the default Gemini model used if not specified by the user.
-	// Gemini 3.5 Flash is chosen for its balance of speed and cost for grounded search.
+	// Gemini 3.8 Flash is chosen for its balance of speed and cost for grounded search.
 	// For higher reasoning quality, consider using "gemini-3.1-pro-preview" via WithModelName.
-	DefaultModelName = "gemini-3.5-flash"
+	DefaultModelName = "gemini-3.8-flash"
 
 	// DefaultTemperature for grounded search tasks.
 	// 0.0f is generally recommended for factuality and to minimize hallucinations.
