@@ -17,7 +17,7 @@ A Go client library for Google's Gemini API, focusing on leveraging its Google S
 
 ## Prerequisites
 
-- Go 1.20 or later (refer to `go.mod` in the library for precise module dependencies)
+- Go 1.27 or later (refer to `go.mod` in the library for precise module dependencies)
 - A Google Gemini API Key. You can obtain one from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Installation
